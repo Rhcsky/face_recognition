@@ -7,7 +7,12 @@ handlers:
     class: logging.StreamHandler
     formatter: simple
     stream: ext://sys.stdout
+  file:
+    class: logging.FileHandler
+    formatter: simple
+    # relative to the job log directory
+    filename: ${hydra.job.name}.log
 root:
-  handlers: [ console ]
+  handlers: [ console , file ]
 
 disable_existing_loggers: false
