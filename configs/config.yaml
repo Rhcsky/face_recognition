@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - model: double_relation
+  - trainer: double_relation
+
+hydra:
+  run:
+    dir: outputs//${now:%Y-%m-%d}/${model.architecture}

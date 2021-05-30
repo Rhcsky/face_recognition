@@ -1,0 +1,10 @@
+defaults:
+  - double_relation_trainer_schema
+
+lr: 1e-4
+epochs: 30
+test_iter: 1
+episode_tr: 100
+episode_val: 100
+num_query_tr: 5
+num_query_val: 5

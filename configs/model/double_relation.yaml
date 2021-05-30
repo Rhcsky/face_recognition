@@ -1,0 +1,7 @@
+defaults:
+  - double_relation_schema
+
+architecture: double_relation
+conv_dim: 64
+fc_dim: 256
+device: ???
