@@ -10,7 +10,6 @@ from configs import BaseConfig
 from dataloader import get_dataloader
 from utils.train_utils import save_checkpoint
 
-writer = SummaryWriter()
 log = logging.getLogger(__name__)
 best_acc = 0
 
@@ -60,6 +59,7 @@ def main(cfg: BaseConfig) -> None:
 
     train_loader, val_loader = get_dataloader(cfg.trainer, 'train', 'val')
     in_channel = get_channel(cfg.trainer.dataset.lower())
+
     model, criterion, run = get_model(cfg.model, cfg.trainer, in_channel)
 
     optimizer = torch.optim.Adam(model.parameters(), cfg.trainer.lr)
@@ -68,6 +68,8 @@ def main(cfg: BaseConfig) -> None:
 
     scheduler = torch.optim.lr_scheduler.MultiplicativeLR(optimizer=optimizer,
                                                           lr_lambda=lambda epoch: 0.9)
+    writer = SummaryWriter()
+    
     log.info(f"model parameter : {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
     for epoch in range(cfg.trainer.epochs):
