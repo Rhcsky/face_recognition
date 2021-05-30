@@ -1,4 +1,5 @@
 from attr import dataclass
+import torch
 
 
 @dataclass
@@ -8,6 +9,8 @@ class BasicTrainer:
     dataset: str = "face"
     n_way: int = 5
     k_shot: int = 5
+    device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    is_save: bool = False
 
 
 @dataclass

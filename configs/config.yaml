@@ -2,7 +2,9 @@
 defaults:
   - model: double_relation
   - trainer: double_relation
+  - override hydra/job_logging: custom
 
 hydra:
   run:
     dir: outputs//${now:%Y-%m-%d}/${model.architecture}
+  verbose: [ __main__ ]
