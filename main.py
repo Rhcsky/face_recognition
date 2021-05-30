@@ -88,7 +88,7 @@ def main(cfg: BaseConfig) -> None:
 
             if cfg.trainer.save_model:
                 save_checkpoint({
-                    'model_state_dict': model.module.state_dict(),
+                    'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'best_acc1': best_acc,
                     'epoch': epoch,
