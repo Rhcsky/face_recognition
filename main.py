@@ -69,7 +69,7 @@ def main(cfg: BaseConfig) -> None:
     scheduler = torch.optim.lr_scheduler.MultiplicativeLR(optimizer=optimizer,
                                                           lr_lambda=lambda epoch: 0.9)
     writer = SummaryWriter()
-    
+
     log.info(f"model parameter : {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
     for epoch in range(cfg.trainer.epochs):
@@ -86,7 +86,7 @@ def main(cfg: BaseConfig) -> None:
             else:
                 is_best = False
 
-            if cfg.trainer.is_save:
+            if cfg.trainer.save_model:
                 save_checkpoint({
                     'model_state_dict': model.module.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
