@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from configs import BaseConfig
 from dataloader import get_dataloader
-from utils.train_utils import save_checkpoint
+from models.embedding import Embedding
 
 log = logging.getLogger(__name__)
 best_acc = 0
@@ -20,13 +20,13 @@ def init_seed(seed):
     torch.cuda.manual_seed(seed)
 
 
-def get_model(model_cfg, train_cfg, in_channel):
+def get_model(model_cfg, train_cfg):
     if 'double_relation' == model_cfg.architecture:
         from models.double_relation import DoubleRelationNet
         from fit import DoubleRelationFit
 
         model = DoubleRelationNet(train_cfg.n_way, train_cfg.k_shot, train_cfg.num_query_tr, train_cfg.num_query_val,
-                                  in_channel, model_cfg.conv_dim, model_cfg.fc_dim).to(train_cfg.device)
+                                  model_cfg.conv_dim, model_cfg.fc_dim).to(train_cfg.device)
         criterion = torch.nn.BCEWithLogitsLoss()
         run = DoubleRelationFit(train_cfg)
 
@@ -60,7 +60,8 @@ def main(cfg: BaseConfig) -> None:
     train_loader, val_loader = get_dataloader(cfg.trainer, 'train', 'val')
     in_channel = get_channel(cfg.trainer.dataset.lower())
 
-    model, criterion, run = get_model(cfg.model, cfg.trainer, in_channel)
+    embedding = Embedding(in_channel).to(cfg.trainer.device)
+    model, criterion, run = get_model(cfg.model, cfg.trainer)
 
     optimizer = torch.optim.Adam(model.parameters(), cfg.trainer.lr)
 
@@ -73,12 +74,12 @@ def main(cfg: BaseConfig) -> None:
     log.info(f"model parameter : {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
     for epoch in range(cfg.trainer.epochs):
-        train_loss, train_acc = run.train(train_loader, model, optimizer, criterion)
+        train_loss, train_acc = run.train(train_loader, model, embedding, optimizer, criterion)
 
         is_test = False if epoch % cfg.trainer.test_iter else True
 
         if is_test or epoch == cfg.trainer.epoches - 1:
-            val_loss, val_acc = run.validate(val_loader, model, criterion)
+            val_loss, val_acc = run.validate(val_loader, model, embedding, criterion)
 
             if val_acc >= best_acc:
                 is_best = True
@@ -86,13 +87,17 @@ def main(cfg: BaseConfig) -> None:
             else:
                 is_best = False
 
-            if cfg.trainer.save_model:
-                save_checkpoint({
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'best_acc1': best_acc,
-                    'epoch': epoch,
-                }, is_best)
+            # if cfg.trainer.save_model:
+            # save_checkpoint({
+            #     'model_state_dict': model.state_dict(),
+            #     'optimizer_state_dict': optimizer.state_dict(),
+            #     'best_acc1': best_acc,
+            #     'epoch': epoch,
+            # }, is_best)
+
+            if is_best:
+                torch.save(model, 'double_relation.pt')
+                torch.save(embedding, 'embedding.pt')
 
             train_log = f"[{epoch + 1}/{cfg.trainer.epochs}] {train_loss:.3f}, {val_loss:.3f}, {train_acc:.3f}, {val_acc:.3f}, # {best_acc:.3f}"
             log.info(train_log)

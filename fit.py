@@ -1,6 +1,9 @@
+import albumentations as A
 import torch
+from albumentations.pytorch import ToTensorV2
 from torch.nn.utils import clip_grad_norm_
 
+from utils.common import split_support_query_set
 from utils.train_utils import AverageMeter
 
 
@@ -13,15 +16,26 @@ class DoubleRelationFit:
 
         self.device = args.device
 
-    def train(self, train_loader, model, optimizer, criterion):
+        self.transform = A.Compose([
+            ToTensorV2
+        ])
+
+    def train(self, train_loader, model, embedding, optimizer, criterion):
         losses = AverageMeter()
         accuracies = AverageMeter()
+        num_query = self.num_query_tr
 
-        self.model_status_train(model)
+        embedding.train()
+        model.train()
         for i, data in enumerate(train_loader):
             x, _y = data[0].to(self.device), data[1].to(self.device)
 
-            y_pred, y_query = model(x, _y)
+            _embed = embedding(x)
+            support_vector, query_vector, y_support, y_query = split_support_query_set(_embed, _y, self.num_class,
+                                                                                       self.num_support,
+                                                                                       num_query)
+
+            y_pred = model(support_vector, query_vector)
 
             y_one_hot = torch.zeros(self.num_query_tr * self.num_class, self.num_class).to(self.device).scatter_(1,
                                                                                                                  y_query.unsqueeze(
@@ -44,20 +58,27 @@ class DoubleRelationFit:
         return losses.avg, accuracies.avg
 
     @torch.no_grad()
-    def validate(self, val_loader, model, criterion):
+    def validate(self, val_loader, model, embedding, criterion):
         losses = AverageMeter()
         accuracies = AverageMeter()
+        num_query = self.num_query_val
 
-        self.model_status_eval(model)
+        embedding.eval()
+        model.eval()
         for i, data in enumerate(val_loader):
             x, _y = data[0].to(self.device), data[1].to(self.device)
 
-            y_pred, y_query = model(x, _y)
+            _embed = embedding(x)
+            support_vector, query_vector, y_support, y_query = split_support_query_set(_embed, _y, self.num_class,
+                                                                                       self.num_support,
+                                                                                       num_query)
 
-            y_one_hot = torch.zeros(self.num_query_val * self.num_class, self.num_class).to(self.device).scatter_(1,
-                                                                                                                  y_query.unsqueeze(
-                                                                                                                      1),
-                                                                                                                  1)
+            y_pred = model(support_vector, query_vector)
+
+            y_one_hot = torch.zeros(self.num_query_tr * self.num_class, self.num_class).to(self.device).scatter_(1,
+                                                                                                                 y_query.unsqueeze(
+                                                                                                                     1),
+                                                                                                                 1)
             loss = criterion(y_pred, y_one_hot)
 
             losses.update(loss.item(), y_pred.size(0))
@@ -69,16 +90,12 @@ class DoubleRelationFit:
 
         return losses.avg, accuracies.avg
 
-    def model_status_train(self, model):
-        if isinstance(model, torch.nn.DataParallel):
-            model.module.custom_train()
-        else:
-            model.custom_train()
-        model.train()
-
-    def model_status_eval(self, model):
-        if isinstance(model, torch.nn.DataParallel):
-            model.module.custom_eval()
-        else:
-            model.custom_eval()
+    @torch.no_grad()
+    def infer(self, facebank, query, model, embedding):
+        embedding.eval()
         model.eval()
+
+        query = embedding(query)
+        out = model(facebank, query, True)
+        print(out)
+        return torch.argmax(out)
