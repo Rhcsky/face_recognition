@@ -1,18 +1,17 @@
 import os
 from glob import glob
 
-import albumentations as A
 import cv2
 import torch
-from albumentations.pytorch import ToTensorV2
+import torchvision.transforms as transforms
 from tqdm import tqdm
 
 if __name__ == '__main__':
     embedding = torch.load('saved_model/embedding.pt').to('cuda')
-    transform = A.Compose([
-        A.Resize(112, 92),
-        A.Normalize(mean=0.441875, std=0.1859375),
-        ToTensorV2(),
+    transform = transforms.Compose([
+        transforms.Resize((112, 92)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=0.441875, std=0.1859375)
     ])
     classes = glob('facebank/images/*')
     print(classes)
