@@ -16,7 +16,7 @@ class DoubleRelationNet(nn.Module):
 
         self.layer1 = ConvBlock(64 * 2, conv_dim, 3, max_pool=2)
         self.layer2 = ConvBlock(conv_dim, 64, 3, max_pool=2)
-        self.fc1 = nn.Linear(960, fc_dim)
+        self.fc1 = nn.Linear(576, fc_dim)
         self.fc2 = nn.Linear(fc_dim, 1)
 
         self.relu = nn.ReLU(inplace=True)

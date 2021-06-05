@@ -1,14 +1,27 @@
 import os
+import cv2
 
 import albumentations as A
 import torch
 from albumentations.pytorch import ToTensorV2
+import face_recognition
 
 from fit import DoubleRelationFit2
 
 
-def get_model(fname='face_vector'):
-    facebank = torch.load(os.path.join(f'facebank/{fname}.pt'))
+def crop_face(img):
+    location = face_recognition.face_locations(img, model='hog')  # top, right, bottom, left
+    location = location[0]
+
+    top, right, bottom, left = location
+    img = img[top:bottom, left:right]
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return img
+
+
+def get_model(fvname='face_vector'):
+    facebank = torch.load(os.path.join(f'facebank/{fvname}.pt'))
     with open(os.path.join('facebank/classes.txt'), 'r') as f:
         classes = f.read().splitlines()
 
@@ -30,9 +43,10 @@ def get_model(fname='face_vector'):
 
 
 def inference(image, run, model, embedding, transform, facebank, classes):
-    # img_dir = os.path.join('capture/images/s1/1.png')
-    # image = cv2.imread(img_dir, cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread(image)
+    image = crop_face(image)
     image = transform(image=image)['image'].unsqueeze(0).float().to('cuda')
+
     best_prob, idx = list(map(lambda x: x.item(), run.infer(facebank, image, model, embedding)))
 
     if best_prob > -5:
@@ -45,5 +59,5 @@ def inference(image, run, model, embedding, transform, facebank, classes):
 
 if __name__ == '__main__':
     args = get_model()
-    img = "some_path.jpg"
-    best_prob, idx, ans = inference(img, *args)
+    img_path = "some_path.jpg"
+    best_prob, idx, ans = inference(img_path, *args)

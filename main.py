@@ -4,11 +4,12 @@ import hydra
 import numpy as np
 import torch
 from torch.backends import cudnn
-from torch.utils.tensorboard import SummaryWriter
 
 from configs import BaseConfig
 from dataloader import get_dataloader
 from models.embedding import Embedding
+
+# from torch.utils.tensorboard import SummaryWriter
 
 log = logging.getLogger(__name__)
 best_acc = 0
@@ -69,7 +70,7 @@ def main(cfg: BaseConfig) -> None:
 
     scheduler = torch.optim.lr_scheduler.MultiplicativeLR(optimizer=optimizer,
                                                           lr_lambda=lambda epoch: 0.9)
-    writer = SummaryWriter()
+    # writer = SummaryWriter()
 
     log.info(f"model parameter : {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
@@ -102,17 +103,17 @@ def main(cfg: BaseConfig) -> None:
             train_log = f"[{epoch + 1}/{cfg.trainer.epochs}] {train_loss:.3f}, {val_loss:.3f}, {train_acc:.3f}, {val_acc:.3f}, # {best_acc:.3f}"
             log.info(train_log)
 
-            writer.add_scalar("Acc/Train", train_acc, epoch + 1)
-            writer.add_scalar("Acc/Val", val_acc, epoch + 1)
-            writer.add_scalar("Loss/Train", train_loss, epoch + 1)
-            writer.add_scalar("Loss/Val", val_loss, epoch + 1)
+            # writer.add_scalar("Acc/Train", train_acc, epoch + 1)
+            # writer.add_scalar("Acc/Val", val_acc, epoch + 1)
+            # writer.add_scalar("Loss/Train", train_loss, epoch + 1)
+            # writer.add_scalar("Loss/Val", val_loss, epoch + 1)
 
         else:
             train_log = f"[{epoch + 1}/{cfg.trainer.epochs}] {train_loss:.3f}, {train_acc:.3f}"
             log.info(train_log)
 
         scheduler.step()
-    writer.close()
+    # writer.close()
 
 
 if __name__ == '__main__':
