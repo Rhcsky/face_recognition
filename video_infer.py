@@ -3,7 +3,7 @@ import face_recognition
 
 from infer import get_model, inference
 
-inference_args = get_model('face_vector_library')
+inference_args = get_model('face_vector')
 new_inference_args = get_model()
 
 
@@ -32,7 +32,7 @@ i = 0
 if cap.isOpened():
     while True:
         ret, img = cap.read()
-        print(i)
+        print('.',end='')
         if i > 240:
             inference_args = new_inference_args
         if ret:
